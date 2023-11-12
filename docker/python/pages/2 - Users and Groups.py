@@ -92,7 +92,10 @@ class UsersGroups:
 
         def add_group(group, parent, admin):
             if self.svr and group:
-                p_gid = self.svr.ops.get_group(group_name=parent)["pk"]
+                if parent:
+                    p_gid = self.svr.ops.get_group(group_name=parent)["pk"]
+                else:
+                    p_gid = None
                 rtn = self.svr.ops.add_group(group_name=group,
                                              parent_group=p_gid,
                                              is_superuser=admin)
@@ -236,14 +239,19 @@ class UsersGroups:
                     with st.form(key="add_group_form", clear_on_submit=True):
                         add_group_entry = st.text_input("Group Name",
                                                         key="add_group_entry")
-                        add_group_parent = st.selectbox("Parent Group",
+                        add_group_parent = st.multiselect("Parent Group",
                                                         self.g_df[
                                                             "name"].tolist(),
-                                                        key="add_group_parent")
+                                                        key="add_group_parent",
+                                                          max_selections=1)
                         add_group_admin = st.checkbox("Admin Group",
                                                       key="add_group_admin")
                         add_group_button = st.form_submit_button("Add Group")
                         if add_group_button:
+                            if not add_group_parent:
+                                add_group_parent = ""
+                            else:
+                                add_group_parent = add_group_parent[0]
                             add_group(add_group_entry, add_group_parent,
                                       add_group_admin)
                             time.sleep(1)

@@ -131,8 +131,11 @@ class AuthOperations:
     def get_groups(self):
         self.svr.groups = self.svr.make_get_call('/core/groups/')
         groups = {}
-        for item in self.svr.groups['results']:
-            groups[item['name']] = item
+        try:
+            for item in self.svr.groups['results']:
+                groups[item['name']] = item
+        except KeyError:
+            return {'error': 'No groups found'}
         return groups
 
     def get_roles(self):

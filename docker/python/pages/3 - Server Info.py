@@ -54,7 +54,6 @@ class Info:
                 if 'detail' in self.data["tasks"]:
                     st.error(self.data["tasks"]["detail"], icon="⚠️")
                 else:
-                    print(self.data["tasks"])
                     df = pd.DataFrame(self.data["tasks"])
 
                     # Convert the timestamp strings to datetime objects

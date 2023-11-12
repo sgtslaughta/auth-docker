@@ -8,17 +8,13 @@ WORKDIR /app
 COPY python/ /app
 
 # Make port 8501 available to the world outside this container
-EXPOSE 8501
+EXPOSE 8088
 
 # Install any needed packages specified in requirements.txt
 #RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Streamlit and Streamlit-Elements
-RUN pip3 install streamlit streamlit-elements
+RUN pip3 install streamlit requests pandas plotly-express
 
-# Define environment variable
-ENV NAME World
-
-# Run 1- Connect.py when the container launches
-CMD ["streamlit", "run", "/app/app.py", "--browser.gatherUsageStats",
-"false", "--server.port", "8080"]
+# Run Connect.py when the container launches
+CMD ["streamlit", "run", "/app/Connect.py", "--browser.gatherUsageStats", "false", "--server.port", "8080"]

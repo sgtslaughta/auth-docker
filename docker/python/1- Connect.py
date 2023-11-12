@@ -4,7 +4,7 @@ import streamlit as st
 
 class App:
     def __init__(self):
-        self.api = "64ZD6fQlOmudCB1z6jP5IrIdUTknLJC3uym7XFPqc6f71xhb5DiSL36rxZDW"
+        self.api = None
         self.addr = "http://localhost"
         self.port = 80
         st.set_page_config(layout="wide", page_icon=":lock:",
@@ -58,8 +58,14 @@ class App:
         self.addr = addr
         self.port = port
         st.session_state["svr"] = AuthServer(api, addr, port)
-        if not st.session_state["svr"]:
-            st.error("Connection Error", icon="⚠️")
+        test = st.session_state["svr"].ops.get_metrics()
+
+        if "detail" in test:
+            st.error(test['detail'], icon="⚠️")
+            st.session_state["svr"] = None
+        elif "error" in test:
+            st.error(test['error'], icon="⚠️")
+            st.session_state["svr"] = None
         else:
             st.success("Connected", icon="👍")
 

@@ -1,6 +1,6 @@
 import requests
 import json
-import warnings
+from re import search
 import urllib3
 
 
@@ -39,6 +39,11 @@ def api_get(key: str,
         return {'error': 'Invalid URL'}
     except requests.exceptions.SSLError:
         return {'error': 'Invalid SSL/Self-Signed Certificate'}
+    except requests.exceptions.ConnectionError as e:
+        match = search(r'\[Errno .?\d+] .*', str(e))
+        if not match:
+            return {'error': e}
+        return {'error': match.group().rstrip(')\'\"')}
     if rtn.status_code not in [200, 400, 403]:
         return {'error': rtn}
     rtn_obj = json.loads(rtn.text)

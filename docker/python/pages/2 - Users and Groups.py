@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 import plotly.express as px
 from datetime import datetime
@@ -17,11 +18,11 @@ class UsersGroups:
 
         st.set_page_config(layout="wide", page_icon=":lock:",
                            page_title="Auth Server")
-        self.status = st.status(label="Waiting for connection",
+        self.status = st.status(label="Waiting for connection...",
                                 state='running',
                                 expanded=False)
 
-        self.sidebar()
+        #self.sidebar()
         if self.svr:
             self.users_data = self.svr.ops.get_users()
             self.groups_data = self.svr.ops.get_groups()
@@ -90,6 +91,7 @@ class UsersGroups:
             with st.expander("Add/Remove User", expanded=False):
                 add_user_col, remove_user_col = st.columns(2)
                 with add_user_col:
+                    st.write("Add User")
                     add_user = st.text_input("Username", key="add_user")
                     add_name = st.text_input("Name", key="add_name")
                     add_email = st.text_input("Email", key="add_email")
@@ -102,6 +104,7 @@ class UsersGroups:
                                                                  add_email,
                                                                  add_pw))
                 with remove_user_col:
+                    st.write("Remove User")
                     del_user = st.text_input("Username", key="del_user")
                     del_user_button = st.button("Remove User",
                                                 on_click=
@@ -112,9 +115,15 @@ class UsersGroups:
             with charts_container:
                 col11, col21 = st.columns(2)
                 with col11:
-                    st.header("Admins")
-                    st.bar_chart(self.u_df["is_superuser"].value_counts(),
-                                 use_container_width=True, y="count")
+                    st.header("Admins to Regular Users")
+                    admin_pie_chart = px.pie(self.u_df, names="is_superuser",
+                                                title="Admins to Regular Users")
+                    admin_pie_chart.update_traces(textposition='inside',
+                                                  textinfo='percent+label+value')
+                    st.plotly_chart(admin_pie_chart,
+                                    use_container_width=True,
+                                    sharing="streamlit",
+                                    theme="streamlit")
                 with col21:
                     st.header("Active")
                     active_pie_chart = px.pie(self.u_df, names="is_active",
@@ -149,7 +158,7 @@ class UsersGroups:
                 self.g_dd_entry = st.selectbox("Select Group",
                                                self.groups_data.keys())
 
-                with st.expander("Group Details", expanded=False):
+                with st.expander("Group Details", expanded=True):
                     try:
                         if self.groups_data[self.g_dd_entry]["is_superuser"]:
                             st.warning("Admin Group", icon="⚠️")

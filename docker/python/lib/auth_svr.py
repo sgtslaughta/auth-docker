@@ -374,4 +374,7 @@ class AuthOperations:
         data['logins'] = self.svr.make_get_call('/admin/metrics/')
         data['system'] = self.svr.make_get_call('/admin/system/')
         data['version'] = self.svr.make_get_call('/admin/version/')
+        data['apps'] = self.svr.make_get_call('/core/applications/')
+        data['tasks'] = self.svr.make_get_call('/admin/system_tasks/')
+        data['sessions'] = self.svr.make_get_call('/core/authenticated_sessions/')
         return data

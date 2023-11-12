@@ -1,4 +1,4 @@
-from lib.auth_api import api_get, api_post, api_delete
+from lib.auth_api import api_get, api_post, api_delete, api_put
 import json
 import secrets
 import string
@@ -207,9 +207,9 @@ class AuthOperations:
         }
         data = json.dumps(data)
         rtn = api_post(self.svr.api_key, data, self.svr.svr_addr,
-                          f'/core/groups/{group_id}/add_user/',
-                          self.svr.svr_port,
-                          self.svr.verify_ssl)
+                       f'/core/groups/{group_id}/add_user/',
+                       self.svr.svr_port,
+                       self.svr.verify_ssl)
         return rtn
 
     def remove_user_from_group(self, user_id: int = None, group_id: int = None,
@@ -275,7 +275,47 @@ class AuthOperations:
                         self.svr.verify_ssl)
         return data
 
-    def set_password(self, user_id: int, password: str):
+    def edit_user(self, user_id: int = None, user_name: str = None,
+                  display_name: str = None, email: str = None,
+                  is_active: bool = None, groups: list = None,
+                  attributes: dict = None, path: str = None,
+                  type: str = None) -> dict:
+        if user_id is None and user_name is None:
+            print("You must specify either a user ID or name.")
+            return {'error': 'You must specify either a user ID or name.'}
+        if user_id is None:
+            user = self.get_user(username=user_name)
+            try:
+                user_id = user['pk']
+            except TypeError:
+                print(f"The user '{user_name}' does not exist.")
+                return {'error': f"The user '{user_name}' does not exist."}
+        else:
+            user = self.get_user(user_id=user_id)
+        data = {}
+        data['username'] = user_name
+        data['name'] = display_name
+        data['email'] = email
+        data['is_active'] = is_active
+        data['last_login'] = user['last_login']
+        data['groups'] = user['groups']
+        data['attributes'] = user['attributes']
+        data['path'] = user['path']
+        data['type'] = user['type']
+        data = json.dumps(data)
+        data = api_put(self.svr.api_key, data, self.svr.svr_addr,
+                        f'/core/users/{user_id}/', self.svr.svr_port,
+                        self.svr.verify_ssl)
+        return data
+
+    def set_password(self, user_id: int = None, password: str = None,
+                     user_name: str = None):
+        if not user_id and not user_name:
+            rtn = {'error': 'You must specify either a user ID or name.'}
+            return rtn
+        if user_id is None:
+            user = self.get_user(username=user_name)
+            user_id = user['pk']
         data = {
             "password": password
         }
@@ -376,5 +416,6 @@ class AuthOperations:
         data['version'] = self.svr.make_get_call('/admin/version/')
         data['apps'] = self.svr.make_get_call('/core/applications/')
         data['tasks'] = self.svr.make_get_call('/admin/system_tasks/')
-        data['sessions'] = self.svr.make_get_call('/core/authenticated_sessions/')
+        data['sessions'] = self.svr.make_get_call(
+            '/core/authenticated_sessions/')
         return data

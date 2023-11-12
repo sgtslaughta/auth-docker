@@ -2,9 +2,10 @@ version: '3'
 services:
   auth_app1:
     container_name: auth_app1
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: chi3f/authentik-mgr:1.0
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
     ports:
       - "8080:8088"
     volumes:

@@ -106,6 +106,16 @@ class UsersGroups:
                 if rtn is None:
                     self.status.success("Group Removed", icon="👍")
 
+        def edit_user_func(uname, name, email, active):
+            if self.svr and uname:
+                rtn = self.svr.ops.edit_user(user_name=uname,
+                                             display_name=name,
+                                             email=email,
+                                             is_active=active)
+                if rtn:
+                    self.status.success("User Edited", icon="👍")
+                    self.refresh()
+
         self.refresh_button = st.button("Refresh",
                                         on_click=self.refresh)
         self.users_container = st.container()
@@ -136,6 +146,61 @@ class UsersGroups:
                                                 lambda: remove_user(
                                                     del_user))
 
+            with st.expander("Edit User", expanded=False):
+                edit_u_col1, edit_u_col2 = st.columns(2)
+                with edit_u_col1:
+                    st.write("Edit User")
+                    edit_user_sel = st.selectbox("Select User",
+                                             self.u_df["username"].tolist(),
+                                             key="edit_user")
+                    edit_name = st.text_input("Name",
+                                              key="edit_name",
+                                              value=self.u_df.loc[
+                                                  edit_user_sel, 'name'])
+                    edit_email = st.text_input("Email",
+                                               key="edit_email",
+                                               value=self.u_df.loc[
+                                                   edit_user_sel, "email"])
+                    edit_active = st.checkbox("Active",
+                                              key="edit_active",
+                                              value=self.users_data[
+                                                  edit_user_sel]["is_active"])
+                    edit_user_button = st.button("Edit User",
+                                                 on_click=
+                                                 lambda: edit_user_func(
+                                                     edit_user_sel,
+                                                     edit_name,
+                                                     edit_email,
+                                                     edit_active))
+
+                with edit_u_col2:
+                    st.write("Change Password")
+                    with st.form(key="edit_user_form2", clear_on_submit=True):
+                        edit_user = st.selectbox("Select User",
+                                                 self.u_df[
+                                                     "username"].tolist(),
+                                                 key="edit_user2")
+                        chg_pw = st.text_input("Change Password",
+                                               key="chg_pw",
+                                               type="password")
+                        chg_pw_2 = st.text_input("Confirm Password",
+                                                 key="chg_pw_2",
+                                                 type="password")
+                        chg_pw_button = st.form_submit_button("Set Password")
+                        if chg_pw_button:
+                            if not chg_pw or not chg_pw_2:
+                                st.error("Passwords cannot be blank")
+                            else:
+                                if chg_pw != chg_pw_2:
+                                    st.error("Passwords do not match")
+                                else:
+                                    rtn = self.svr.ops.set_password(
+                                        user_name=edit_user,
+                                        password=chg_pw)
+                                    st.success("Password Changed",
+                                               icon="👍")
+
+            ### User Charts ###
             charts_container = st.container()
             with charts_container:
                 col11, col21 = st.columns(2)
@@ -172,7 +237,8 @@ class UsersGroups:
                         add_group_entry = st.text_input("Group Name",
                                                         key="add_group_entry")
                         add_group_parent = st.selectbox("Parent Group",
-                                                        self.g_df["name"].tolist(),
+                                                        self.g_df[
+                                                            "name"].tolist(),
                                                         key="add_group_parent")
                         add_group_admin = st.checkbox("Admin Group",
                                                       key="add_group_admin")
@@ -197,7 +263,7 @@ class UsersGroups:
             grouped = explode.groupby("name").count()
             groups_by_user_count = px.scatter(grouped,
                                               x=grouped.index,
-                                              y=[1] * len(grouped),
+                                              y=grouped["users"],
                                               title="Groups by User Count",
                                               size='users',
                                               labels={

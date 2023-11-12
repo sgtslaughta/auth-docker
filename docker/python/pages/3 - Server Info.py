@@ -5,6 +5,8 @@ import pandas as pd
 
 class Info:
     def __init__(self):
+        st.set_page_config(layout="wide", page_icon=":lock:",
+                           page_title="Auth Server")
         self.status = st.status(label="Waiting for connection..",
                                 state="running")
         try:

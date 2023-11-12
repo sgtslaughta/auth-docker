@@ -1,14 +1,14 @@
 # Use an official Python runtime as a parent image
 FROM python:3.8-slim
 
-# Set the working directory to /app
-WORKDIR /app
-
 # Make the /app inside the container if it doesn't exist
-RUN mkdir -p /app
+RUN mkdir -p /auth_app
+
+# Set the working directory to /app
+WORKDIR /auth_app
 
 # Copy the current directory contents into the container at /app
-COPY python/ /app
+COPY python/ /auth_app
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8088
@@ -25,4 +25,4 @@ RUN pip install streamlit requests pandas plotly-express
 CMD ["ls", "-lisa", "/app"]
 
 # Run Connect.py when the container launches
-CMD ["streamlit", "run", "/app/Connect.py", "--browser.gatherUsageStats=false", "--server.port=8088"]
+CMD ["streamlit", "run", "/auth_app/Connect.py", "--browser.gatherUsageStats=false", "--server.port=8088"]

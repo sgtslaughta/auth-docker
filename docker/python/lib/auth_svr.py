@@ -1,4 +1,3 @@
-
 from lib.auth_api import api_get, api_post, api_delete
 import json
 import secrets
@@ -189,9 +188,35 @@ class AuthOperations:
             users[user['username']] = user
         return users
 
-    def remove_user_from_group(self, user_id: int = None, group_id: int = None, group_name: str = None, user_name: str = None):
+    def add_user_to_group(self, user_id: int = None, group_id: int = None,
+                          group_name: str = None, user_name: str = None):
+        if user_id is None and user_name is None or group_id is None and \
+                group_name is None:
+            print("You must specify either a user ID or name and a group ID "
+                  "or name.")
+            return {'error': 'You must specify either a user ID or name and a '
+                             'group ID or name.'}
+        if user_id is None:
+            user = self.get_user(username=user_name)
+            user_id = user['pk']
+        if group_id is None:
+            group = self.get_group(group_name=group_name)
+            group_id = group['pk']
+        data = {
+            "pk": user_id
+        }
+        data = json.dumps(data)
+        rtn = api_post(self.svr.api_key, data, self.svr.svr_addr,
+                          f'/core/groups/{group_id}/add_user/',
+                          self.svr.svr_port,
+                          self.svr.verify_ssl)
+        return rtn
+
+    def remove_user_from_group(self, user_id: int = None, group_id: int = None,
+                               group_name: str = None, user_name: str = None):
         if user_id is None and user_name is None or group_id is None and group_name is None:
-            print("You must specify either a user ID or name and a group ID or name.")
+            print(
+                "You must specify either a user ID or name and a group ID or name.")
             return
         if user_id is None:
             user = self.get_user(username=user_name)
@@ -202,12 +227,11 @@ class AuthOperations:
         data = {
             "pk": user_id
         }
-        print(data)
-        print(group_id)
         data = json.dumps(data)
         rtn = api_post(self.svr.api_key, data, self.svr.svr_addr,
-                 f'/core/groups/{group_id}/remove_users/', self.svr.svr_port,
-                 self.svr.verify_ssl)
+                       f'/core/groups/{group_id}/remove_user/',
+                       self.svr.svr_port,
+                       self.svr.verify_ssl)
         return rtn
 
     def add_group(self, group_name: str, is_superuser: bool = False,
@@ -247,8 +271,8 @@ class AuthOperations:
             data['roles'] = roles
         data = json.dumps(data)
         data = api_post(self.svr.api_key, data, self.svr.svr_addr,
-                       '/core/groups/', self.svr.svr_port,
-                       self.svr.verify_ssl)
+                        '/core/groups/', self.svr.svr_port,
+                        self.svr.verify_ssl)
         return data
 
     def set_password(self, user_id: int, password: str):
@@ -257,8 +281,8 @@ class AuthOperations:
         }
         data = json.dumps(data)
         api_post(self.svr.api_key, data, self.svr.svr_addr,
-                         f'/core/users/{user_id}/set_password/',
-                self.svr.svr_port, self.svr.verify_ssl)
+                 f'/core/users/{user_id}/set_password/',
+                 self.svr.svr_port, self.svr.verify_ssl)
 
     def add_user(self, username: str, display_name: str,
                  email: str, is_active: bool = True,
@@ -314,8 +338,8 @@ class AuthOperations:
 
         data = json.dumps(data)
         data = api_post(self.svr.api_key, data, self.svr.svr_addr,
-                          '/core/users/', self.svr.svr_port,
-                       self.svr.verify_ssl)
+                        '/core/users/', self.svr.svr_port,
+                        self.svr.verify_ssl)
         if data:
             if password is None:
                 password = self.generate_password()
@@ -345,3 +369,9 @@ class AuthOperations:
                           f'/core/groups/{group_id}/', self.svr.svr_port,
                           self.svr.verify_ssl)
 
+    def get_svr_data(self):
+        data = {}
+        data['logins'] = self.svr.make_get_call('/admin/metrics/')
+        data['system'] = self.svr.make_get_call('/admin/system/')
+        data['version'] = self.svr.make_get_call('/admin/version/')
+        return data

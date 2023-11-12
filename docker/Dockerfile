@@ -19,6 +19,6 @@ RUN pip3 install streamlit streamlit-elements
 # Define environment variable
 ENV NAME World
 
-# Run app.py when the container launches
+# Run 1- Connect.py when the container launches
 CMD ["streamlit", "run", "/app/app.py", "--browser.gatherUsageStats",
 "false", "--server.port", "8080"]

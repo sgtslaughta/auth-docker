@@ -1,4 +1,8 @@
 import streamlit as st
 
-st.write("Hello World")
-st.write(app.groups_data)
+
+class Info:
+    def __init__(self):
+        st.write("Auth Server1q32")
+        print(st.session_state["users"])
+

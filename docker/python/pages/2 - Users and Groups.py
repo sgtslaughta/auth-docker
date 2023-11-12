@@ -1,7 +1,10 @@
+import time
+
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 from datetime import datetime
+from time import sleep
 from pandas import DataFrame
 
 
@@ -22,14 +25,19 @@ class UsersGroups:
                                 state='running',
                                 expanded=False)
 
-        #self.sidebar()
+        # self.sidebar()
         if self.svr:
             self.users_data = self.svr.ops.get_users()
             self.groups_data = self.svr.ops.get_groups()
             self.u_df = DataFrame(self.users_data).transpose()
             self.g_df = DataFrame(self.groups_data).transpose()
-            self.refresh()
-            self.show_users_groups()
+
+            if self.u_df.empty or self.g_df.empty:
+                self.status.error("Unable to retrieve data", icon="👎")
+                st.write("Unable to retrieve data")
+            else:
+                self.refresh()
+                self.show_users_groups()
 
     def sidebar(self):
         with st.sidebar.container():
@@ -79,7 +87,24 @@ class UsersGroups:
                                                               group_name=group)
                     st.session_state["rem_guser"] = ""
                     if 'error' not in rtn.keys():
-                        self.status.success("User Removed from Group", icon="👍")
+                        self.status.success("User Removed from Group",
+                                            icon="👍")
+
+        def add_group(group, parent, admin):
+            if self.svr and group:
+                p_gid = self.svr.ops.get_group(group_name=parent)["pk"]
+                rtn = self.svr.ops.add_group(group_name=group,
+                                             parent_group=p_gid,
+                                             is_superuser=admin)
+                if rtn:
+                    self.status.success("Group Added", icon="👍")
+                    self.refresh()
+
+        def remove_group(group):
+            if self.svr and group:
+                rtn = self.svr.ops.delete_group(group_name=group)
+                if rtn is None:
+                    self.status.success("Group Removed", icon="👍")
 
         self.refresh_button = st.button("Refresh",
                                         on_click=self.refresh)
@@ -100,9 +125,9 @@ class UsersGroups:
                     add_user_button = st.button("Add User",
                                                 on_click=
                                                 lambda: create_user(add_user,
-                                                                 add_name,
-                                                                 add_email,
-                                                                 add_pw))
+                                                                    add_name,
+                                                                    add_email,
+                                                                    add_pw))
                 with remove_user_col:
                     st.write("Remove User")
                     del_user = st.text_input("Username", key="del_user")
@@ -117,7 +142,7 @@ class UsersGroups:
                 with col11:
                     st.header("Admins to Regular Users")
                     admin_pie_chart = px.pie(self.u_df, names="is_superuser",
-                                                title="Admins to Regular Users")
+                                             title="Admins to Regular Users")
                     admin_pie_chart.update_traces(textposition='inside',
                                                   textinfo='percent+label+value')
                     st.plotly_chart(admin_pie_chart,
@@ -138,6 +163,35 @@ class UsersGroups:
             self.groups_conatiner.header("Groups")
             self.groups_conatiner.write("Groups Table")
             user_dframe = st.dataframe(self.g_df)
+
+            with st.expander("Add/Remove Group", expanded=False):
+                add_g_col, rm_g_col = st.columns(2)
+                with add_g_col:
+                    st.write("Add Group")
+                    with st.form(key="add_group_form", clear_on_submit=True):
+                        add_group_entry = st.text_input("Group Name",
+                                                        key="add_group_entry")
+                        add_group_parent = st.selectbox("Parent Group",
+                                                        self.g_df["name"].tolist(),
+                                                        key="add_group_parent")
+                        add_group_admin = st.checkbox("Admin Group",
+                                                      key="add_group_admin")
+                        add_group_button = st.form_submit_button("Add Group")
+                        if add_group_button:
+                            add_group(add_group_entry, add_group_parent,
+                                      add_group_admin)
+                            time.sleep(1)
+                            self.refresh()
+
+                with rm_g_col:
+                    st.write("Remove Group")
+                    rm_group_entry = st.selectbox("Select Group",
+                                                  self.g_df["name"].tolist(),
+                                                  key="rm_group_entry")
+                    rm_group_button = st.button("Delete Group",
+                                                key="rm_group_button",
+                                                on_click=lambda: remove_group(
+                                                    rm_group_entry))
 
             explode = self.g_df.explode("users")
             grouped = explode.groupby("name").count()
@@ -167,14 +221,16 @@ class UsersGroups:
                     self.g_dd_details = st.dataframe(
                         self.g_df[self.g_df["name"] == self.g_dd_entry])
                     users_not_in_group = []
+
+                    g_df = DataFrame(self.groups_data)
+                    g_df = g_df.transpose()
+                    users = g_df[self.g_df["name"] ==
+                                 self.g_dd_entry]["users_obj"]
+                    users = users.values[0]
+                    users = {user["username"]: user for user in users}
                     if self.groups_data[self.g_dd_entry]["users_obj"]:
                         st.write(f"'{self.g_dd_entry}' Users:")
-                        g_df = DataFrame(self.groups_data)
-                        g_df = g_df.transpose()
-                        users = g_df[self.g_df["name"] ==
-                                     self.g_dd_entry]["users_obj"]
-                        users = users.values[0]
-                        users = {user["username"]: user for user in users}
+
                         users_df = DataFrame(users)
                         st.dataframe(users_df.transpose())
 
@@ -218,11 +274,13 @@ class UsersGroups:
             self.u_df = DataFrame(self.users_data)
             # self.u_df.drop("groups_obj", inplace=True)
             self.u_df = self.u_df.transpose()
+
             col_names = self.u_df.columns.tolist()
-            col_names.remove("groups_obj")
-            self.u_df = self.u_df[col_names]
-            self.u_df["groups"] = self.u_df["groups"].apply(
-                self.swap_guid_for_name)
+            if "groups_obj" in col_names:
+                col_names.remove("groups_obj")
+                self.u_df = self.u_df[col_names]
+                self.u_df["groups"] = self.u_df["groups"].apply(
+                    self.swap_guid_for_name)
 
             time = datetime.now().strftime("%d%b%Y - %H:%M:%S:%f %z")
             st.write(f"Users Dataframe updated - [{time}]")
@@ -231,7 +289,8 @@ class UsersGroups:
             self.g_df = DataFrame(self.groups_data)
             self.g_df = self.g_df.transpose()
             col_names = self.g_df.columns.tolist()
-            col_names.remove("users_obj")
+            if "users_obj" in col_names:
+                col_names.remove("users_obj")
             self.g_df = self.g_df[col_names]
 
             time = datetime.now().strftime("%d%b%Y - %H:%M:%S:%f %z")

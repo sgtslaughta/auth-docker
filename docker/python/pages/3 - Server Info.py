@@ -49,39 +49,46 @@ class Info:
 
                 # print(self.data["tasks"])
                 # Convert task data to a Pandas DataFrame
-                df = pd.DataFrame(self.data["tasks"])
+                if 'detail' in self.data["tasks"]:
+                    st.error(self.data["tasks"]["detail"], icon="⚠️")
+                else:
+                    print(self.data["tasks"])
+                    df = pd.DataFrame(self.data["tasks"])
 
-                # Convert the timestamp strings to datetime objects
-                df['task_finish_timestamp'] = pd.to_datetime(
-                    df['task_finish_timestamp'])
+                    # Convert the timestamp strings to datetime objects
+                    df['task_finish_timestamp'] = pd.to_datetime(
+                        df['task_finish_timestamp'])
 
-                # Extract hour from the timestamp
-                df['hour'] = df['task_finish_timestamp'].dt.hour
+                    # Extract hour from the timestamp
+                    df['hour'] = df['task_finish_timestamp'].dt.hour
 
-                # Filter tasks with status "SUCCESSFUL"
-                successful_tasks = df[df['status'] == 'SUCCESSFUL']
-                tasks = df
+                    # Filter tasks with status "SUCCESSFUL"
+                    successful_tasks = df[df['status'] == 'SUCCESSFUL']
+                    tasks = df
 
-                # Count the number of successful tasks per hour
-                tasks_per_hour = successful_tasks.groupby(
-                    'hour').size().reset_index(name='count')
+                    # Count the number of successful tasks per hour
+                    tasks_per_hour = successful_tasks.groupby(
+                        'hour').size().reset_index(name='count')
 
-                # Create a bar chart using Plotly Express
-                fig = px.density_heatmap(df, x='hour',
-                                         y='task_finish_timestamp',
-                                         title='Tasks per Hour',
-                                         labels={
-                                             'task_finish_timestamp': 'Task '
-                                                                      'Finish Timestamp'},
-                                         facet_col='status')
+                    # Create a bar chart using Plotly Express
+                    fig = px.density_heatmap(df, x='hour',
+                                             y='task_finish_timestamp',
+                                             title='Tasks per Hour',
+                                             labels={
+                                                 'task_finish_timestamp': 'Task '
+                                                                          'Finish Timestamp'},
+                                             facet_col='status')
 
-                # Display the Plotly figure in the Streamlit app
-                st.plotly_chart(fig, use_container_width=True,
-                                sharing="streamlit")
+                    # Display the Plotly figure in the Streamlit app
+                    st.plotly_chart(fig, use_container_width=True,
+                                    sharing="streamlit")
 
             with st.expander("Sessions"):
                 os_col, uagent_col, geo_col = st.columns(3)
                 session_df = pd.DataFrame(self.data['sessions']['results'])
+                if session_df.empty:
+                    st.warning("No Sessions Found", icon="⚠️")
+                    return
 
                 with os_col:
                     # Extract user agent details

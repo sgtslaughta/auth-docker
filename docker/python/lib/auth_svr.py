@@ -358,7 +358,7 @@ class AuthOperations:
                           f'/core/users/{user_id}/', self.svr.svr_port,
                           self.svr.verify_ssl)
 
-    def delete_group(self, group_id: int, group_name: str = None):
+    def delete_group(self, group_id: int = None, group_name: str = None):
         if group_id is None and group_name is None:
             print("You must specify either a group ID or name.")
             return

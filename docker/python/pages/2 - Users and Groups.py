@@ -1,6 +1,7 @@
 import time
 
 import pandas as pd
+import re
 import streamlit as st
 import plotly.express as px
 from datetime import datetime
@@ -51,8 +52,20 @@ class UsersGroups:
                     add_options = st.radio("Add", ["User", "Group"])
 
     def show_users_groups(self):
+        def is_valid_email(email):
+            pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+            return re.match(pattern, email) is not None
         def create_user(uname, name, email, pw):
-            if self.svr and uname and name and email and pw:
+            if self.svr and uname and name:
+                # validate email
+                if not email:
+                    email = None
+                else:
+                    if is_valid_email(email):
+                        pass
+                    else:
+                        st.error("Invalid Email")
+                        return
                 rtn = self.svr.ops.add_user(username=uname,
                                             display_name=name,
                                             email=email,

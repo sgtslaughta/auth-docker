@@ -21,8 +21,5 @@ EXPOSE 8088
 # Install Streamlit and other required packages
 RUN pip install streamlit requests pandas plotly-express
 
-# Display contents of /app
-CMD ["ls", "-lisa", "/app"]
-
 # Run Connect.py when the container launches
 CMD ["streamlit", "run", "/auth_app/Connect.py", "--browser.gatherUsageStats=false", "--server.port=8088"]
